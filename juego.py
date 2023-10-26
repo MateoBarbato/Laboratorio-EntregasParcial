@@ -144,6 +144,7 @@ while True:
                 if event.key == pygame.K_ESCAPE:
                     limpiar()
                     is_running = False
+                    cfg.INTENTOS += 1
                 if event.key == pygame.K_SPACE:
                     disparos.append(crearDisparo(mainBlock['rect'].x,mainBlock['rect'].y,bulletImg,offsetBlock=cfg.MAINANCHO//2))
                 if event.key == pygame.K_UP or event.key == pygame.K_w:
