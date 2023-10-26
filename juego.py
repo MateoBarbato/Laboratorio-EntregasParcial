@@ -20,18 +20,19 @@ contadorScore = cfg.SCORE
 pos_y=cfg.POS_Y
 pos_x = cfg.POS_X
 vidasDificultad = 1
+
 # intervalo de spawn de bloques
 enemiesFallingInterval = cfg.TIME_INTERVAL
 deathInterval = cfg.DEATH_INTERVAL
 shootInterval = cfg.SHOOT_INTERVAL
 powerUpFallingIterval = cfg.POWER_UP_INTERVAL
 restartPowerInterval = cfg.RESTART_POWERUP
+
 # LLAMO A LOS ASSETS
-# /Users/mateobarbatofitzsimons/Desktop/carpeta-clases/entrega-1parcial/assets
 backgroundImage = pygame.image.load('assets/asfalto.png')
 backgroundImage = pygame.transform.rotate(backgroundImage,-90)
 powerUpImage = pygame.image.load('./assets/powerUp.png')
-# backgroundStart = pygame.image.load('assets/asflato.png')
+# powerUpImage = pygame.transform.rotate(powerUpImage,90)
 EnemiesImage0 = pygame.image.load('assets/enemigo0.png')
 EnemiesImage0 = pygame.transform.rotate(EnemiesImage0,90)
 EnemiesImage1 = pygame.image.load('assets/enemigo1.png')
@@ -44,10 +45,15 @@ golpenave = pygame.mixer.Sound('assets/golpenave.mp3')
 explosionFinal = pygame.mixer.Sound('assets/explosionFinal.mp3')
 explosion = pygame.mixer.Sound('assets/explosion.mp3')
 music = pygame.mixer.music.load('assets/8BitMateo.mp3')
+
 # volumen default
 pygame.mixer.music.set_volume(0.5)
-screen = display.set_mode(size)
+screen = display.set_mode(size) 
 backgroundRect = pygame.Rect(0,0,400,800)
+botonPlay = pygame.Rect(250-(cfg.BUTTON_WIDTH//2),height//1.95,cfg.BUTTON_WIDTH,cfg.BUTTON_HEIGHT)
+botonOptions = pygame.Rect(width/2-(cfg.BUTTON_WIDTH//2),height//1.95,cfg.BUTTON_WIDTH,cfg.BUTTON_HEIGHT)
+botonExit = pygame.Rect((width-250)-(cfg.BUTTON_WIDTH//2),height//1.95,cfg.BUTTON_WIDTH,cfg.BUTTON_HEIGHT)
+
 # flags:
 move_up = None
 move_down = None
@@ -58,14 +64,17 @@ hardcoreMode = False
 mute = False
 is_running = True
 poweredUp = False
+
+# evento personalizado 
 # evento personalizado 
 deathEvent = pygame.USEREVENT+2
-fallingBlock = pygame.USEREVENT+1
+# evento personalizado
+deathEvent = pygame.USEREVENT+2
+fallingBlock = pygame.USEREVENT+1 
+deathEvent = pygame.USEREVENT+2
 shootEvent = pygame.USEREVENT+3
 powerUpFallingEvent = pygame.USEREVENT+4
-userPowerUp = pygame.USEREVENT+5
-restartPowerUp = pygame.USEREVENT+6
-# seteamos el timer
+restartPowerUp = pygame.USEREVENT+5
 
 # declaro los array de objetos
 bloques= []
@@ -83,45 +92,48 @@ while True:
     backgroundStartImage = pygame.transform.scale(backgroundImage,(width,height))
     screen.blit(backgroundStartImage,backgroundRect)
     mainBlock = crearRecImagen(pos_x,pos_y,cfg.MAINANCHO,cfg.MAINALTO,color=cfg.WHITE,image=mainBlockImg)
-    mostrarTexto(startFont,f'Press a key to start playing.',True,cfg.WHITE,(width/2-120,100),screen)
-    mostrarTexto(startFont,f'Max Score: {cfg.MAXSCORE}',True,cfg.WHITE,(50,height-100),screen)
-    mostrarTexto(startFont,f'Attempts: {cfg.INTENTOS}',True,cfg.WHITE,(width-180,(height-100)),screen)
+    createText(startFont,f'Press Start to start playing.',True,cfg.BLACK,screen,(width/2,200))
+    # screen.blit(pressAKey,((width-pressAKey.get_width())/2,100))
+    createText(startFont,f'Max Score: {cfg.MAXSCORE}',True,cfg.BLACK,screen,(100,(height-100)))
+    createText(startFont,f'Attempts: {cfg.INTENTOS}',True,cfg.BLACK,screen,(width - 100,(height-100)))
+    # crearBoton(screen,botonPlay,cfg.GREY,'Play!',cfg.BLACK)
+    # crearBoton(screen,botonOptions,cfg.GREY,'Options',cfg.BLACK)
+    # crearBoton(screen,botonExit,cfg.GREY,'Exit',cfg.BLACK)
     pygame.display.flip()
     contadorVidas = 3
     contadorScore = 0
     is_running = True
-    # waitUserClick(rectasdsa)
-    waitUser()
-    # volumen default y loop de musica
+    mute = waitUserClick(botonPlay,botonOptions,botonExit,screen)
+    # waitUser()
+# volumen default y loop de musica
     pygame.mixer.music.play(-1)
-    pygame.mixer.music.set_volume(0.5)
     pygame.time.set_timer(fallingBlock, enemiesFallingInterval)
     pygame.time.set_timer(powerUpFallingEvent, powerUpFallingIterval)
     while is_running:
         
         clock.tick(cfg.FPS)
-        # DETECTO EVENTOS
+# DETECTO EVENTOS
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 exit()
             if event.type == pygame.MOUSEBUTTONUP:
                 if event.button == 1:
+                    # Creo un disparo
                     disparos.append(crearDisparo(mainBlock['rect'].x,mainBlock['rect'].y,bulletImg,offsetBlock=cfg.MAINANCHO//2))
             if event.type == deathEvent:
                 dying.play()
                 limpiar()
                 is_running = False
             if event.type == shootEvent:
+                # Creo un disparo
                 disparos.append(crearDisparo(mainBlock['rect'].x,mainBlock['rect'].y,bulletImg,offsetBlock=cfg.MAINANCHO//2))
-            # if event.type == userPowerUp:
-            #     # Duplico la velocidad de disparo
             if event.type == restartPowerUp:
                 shootInterval = 400
                 mainBlock['speed-y'] = randint(2,3)
                 poweredUp = False
             if event.type == powerUpFallingEvent:
                 # Duplico la velocidad de disparo
-                powerUpList.append(crearRecImagen(left=width+ancho,top=randint(50,450),ancho=40,alto=40,image=powerUpImage,vidas=1))
+                powerUpList.append(crearRecImagen(left=width+ancho,top=randint(50,450),ancho=60,alto=45,image=powerUpImage,vidas=1))
             if event.type == fallingBlock:
                 i = randint(0,1)
                 if i==0:
@@ -143,12 +155,7 @@ while True:
                 if event.key == pygame.K_h:
                     hardcoreMode = not hardcoreMode
                 if event.key == pygame.K_m:
-                    if mute == True:
-                        pygame.mixer.music.set_volume(0.5)
-                        mute = not mute
-                    else:
-                        mute = not mute
-                        pygame.mixer.music.set_volume(False)
+                    mute = not mute
                 if event.key == pygame.K_k:
                     if musicIndex:
                         music =  pygame.mixer.music.load('./assets/8Bit.mp3')
@@ -156,7 +163,7 @@ while True:
                         musicIndex = not musicIndex
                     else:
                         music =  pygame.mixer.music.load('./assets/8BitMateo.mp3')
-                        pygame.mixer.music.set_volume(0.3)
+                        pygame.mixer.music.set_volume(0.5)
                         pygame.mixer.music.play(-1)
                         musicIndex = not musicIndex
             if event.type == pygame.KEYUP:
@@ -164,15 +171,28 @@ while True:
                     move_up = False
                 if event.key == pygame.K_DOWN or event.key == pygame.K_s:
                     move_down = False
-        keyspressed = pygame.key.get_pressed()
+        # cargo los eventos de mousepressed
         mousepressed = pygame.mouse.get_pressed()
-        # ACTUALIZO ELEMENTOS
-        # Blit De Textos y main block
+
+# ACTUALIZO ELEMENTOS
+
+        # Mute
+        # if pygame.mixer.music.get_volume() == 0 or pygame.mixer.music.get_volume() == False:
+        #     mute == True
+        
+        if mute == True:
+            pygame.mixer.music.set_volume(False)
+        else:
+            pygame.mixer.music.set_volume(0.5)
+# Blit De Textos, background y main block
+        # Creo los render y el bliteo por sepearado para poder tener la posibilidad
+        # de centrar utilizando el tamano de los textos y hacerlo lo mas reactivo posible
         backgroundImage = pygame.transform.scale(backgroundImage,(width,height))
         screen.blit(backgroundImage,backgroundRect)
         screen.blit(mainBlock['image'],mainBlock['rect'])
-        mostrarTexto(my_font,f'Lives: {contadorVidas}',True,cfg.WHITE,(50,50),screen)
-        mostrarTexto(my_font,f'Score: {contadorScore}',True,cfg.WHITE,(width /8, 50),screen)
+        createText(my_font,f'Score: {contadorScore}',True,cfg.BLACK,screen,(200,50))
+        createText(my_font,f'Lives: {contadorVidas}',True,cfg.BLACK,screen,((width-200),50))
+        # si esta en ejecucion el juego hago el blit de los bloques principales
         if is_running:
             for disparo in disparos:
                 screen.blit(disparo['image'],disparo['rect'])
@@ -182,38 +202,40 @@ while True:
                 screen.blit(powerUp['image'],powerUp['rect'])
         # PREGUNTAR PORQUE EL COMPORTAMIENTO DE CUANDO ESTA EN FALSE LO TOMA COMO TRUE Y VICEVERSA, ACA DEBERIA IR UN TRUE PERO LO CONSIDERA UN FALSE Y NO DISPARA. SE QUEDA DISPARANDO CUANDO SOLTAS ES CLICK SI ESTA EN TRUE.
         # Y PORQUE EL COMPORTAMIENTO DE CUANDO PONGO LA BARRA ESPACIADORA TAMBIEN SOLO FUNCIONA CUANDO AMBAS CONDICIONES ESTAN
+        # Lo vamos a ver en clase
         if  mousepressed[0] == False : 
             pygame.time.set_timer(shootEvent, shootInterval)
-        # MOVER ELEMENTOS
+            
+# MOVER ELEMENTOS
+
         # MUEVO LOS ALIENS CAYENDO Y LOS DISPAROS
         for disparo in disparos[:]:
             rectDisparo=disparo['rect']
             rectDisparo.move_ip(Speed*2,0)
-            if rectDisparo.right + 5 < 0:
-                if disparo:
-                    disparos.remove(disparo)
+            if rectDisparo.right  < 0:
+                disparos = borrarItemLista(disparos,disparo)
         for powerUp in powerUpList[:]:
             rectPower = powerUp['rect']
             rectPower.move_ip(-powerUp['speed-x']*0.5,0)
-            if rectPower.right + 5 < 0:
+            if rectPower.right< 0:
                 if powerUp:
-                    powerUpList.remove(powerUp)
+                    powerUpList = borrarItemLista(powerUpList,powerUp)
             if detectar_colision_circ(rectPower,mainBlock['rect']):
                 if poweredUp == False:
                     shootInterval = 150
                     mainBlock['speed-y'] = 5
                     poweredUp = True
                     pygame.time.set_timer(restartPowerUp,cfg.RESTART_POWERUP,1)
-                powerUpList.remove(powerUp)
-            # detecto las colisiones con los disparos para penalizar al usuario cuando dispara a un power up
-            for disparo in disparos:
+                powerUpList = borrarItemLista(powerUpList,powerUp)
+        # Detecto las colisiones con los disparos para penalizar al usuario cuando dispara a un power up
+            for disparo in disparos[:]:
                 if detectar_colision_circ(rectPower,disparo['rect']):
                     if powerUp['vidas'] <= 1:
-                        powerUpList.remove(powerUp)
+                        powerUpList = borrarItemLista(powerUpList,powerUp)
                     else:
                         powerUp['vidas'] -= 1
-                    disparos.remove(disparo)
-                    # crear un sonido de muerte de powerUp a mano como los otros.
+                    disparos = borrarItemLista(disparos,disparo)
+        # Crear un sonido de muerte de powerUp a mano como los otros.
                     explosion.play()
 
         for bloque in bloques[:]:
@@ -231,35 +253,33 @@ while True:
                         rect.move_ip(-bloque['speed-x'],+bloque['speed-y'])
                     else:
                         posiciones = True
-        # DETECTO COLISIONES
-            # final de pantalla borro bloque para liberar memoria le sumo 5 para que se vea mas prolijo y aseguro
-            if rect.right + 5 < 0:
-            # Tengo que validar que el bloque exista antes de borrarlo porque en los casos de bloques con varias vidas si esta haciendo colision con la nave pero esta tocando el borde de la pantalla borra un bloque que ya no existe mas y rompe
-                if bloque:
-                    bloques.remove(bloque)
-            # chequeo la colision con el tiro y los aliens
-            for disparo in disparos:
+# DETECTO COLISIONES
+
+        # Final de pantalla borro bloque para liberar memoria le sumo 5 para que se vea mas prolijo y aseguro
+        # Tengo que validar que el bloque exista antes de borrarlo porque puede haber sido borrado por alguna colision (la prioridad la tienen los disparos)
+            if rect.right < 0:
+                bloques = borrarItemLista(bloques,bloque) 
+        # Chequeo la colision con el tiro y los aliens
+            for disparo in disparos[:]:
                 if detectar_colision_circ(rect,disparo['rect']):
-                    if bloque['vidas'] <= 1:
-                        bloques.remove(bloque)
+                    if bloque['vidas'] <= 1: 
+                        bloques = borrarItemLista(bloques,bloque) 
                         contadorScore +=1
                     else:
                         bloque['vidas'] -= 1
-                        # dificultad
+        # Sector dificultad
                     if contadorScore >= 50:
                         vidasDificultad = 2
                     elif contadorScore >= 100:
                         vidasDificultad = 3
-                    disparos.remove(disparo)
+                    disparos = borrarItemLista(disparos,disparo)
                     explosion.play()
-            # detecto las colisiones con el mainbody para restar vidas
-            # ejemplo de como seria lo de mascara
-            # offset= (bloque.x - mainBlock.x, bloque.y - mainBlock.y)
+        # Detecto las colisiones con el mainbody
             if detectar_colision_circ(rect,mainBlock['rect']):
                 if contadorVidas == 1 :
                     limpiar()
                     explosionFinal.play()
-                    if cfg.MAXSCORE<contadorScore:
+                    if cfg.MAXSCORE < contadorScore:
                         cfg.MAXSCORE = contadorScore
                         cfg.INTENTOS = 0
                     else:
@@ -268,20 +288,22 @@ while True:
                 else:
                     contadorVidas -= 1
                     golpenave.play()
-                    bloques.remove(bloque)
-        # MUEVO EL MAIN BLOCK
+                    bloques = borrarItemLista(bloques,bloque) 
+# MUEVO EL MAIN BLOCK
         if move_down and mainBlock['rect'].bottom < height:
             mainBlock['rect'].move_ip(0,+mainBlock['speed-y'])
         if move_up and mainBlock['rect'].top > 0 + 5 :
             mainBlock['rect'].move_ip(0,-mainBlock['speed-y'])
             
-        # ACTUALIZO PANTALLA
+# ACTUALIZO PANTALLA
         pygame.display.flip()
-    # AFUERA DEL IS_RUNNING
+# AFUERA DEL IS_RUNNING
     backgroundImage = pygame.transform.scale(backgroundImage,(width,height))
     screen.blit(backgroundImage,backgroundRect)
-    mostrarTexto(my_font,f'Game Over !',True,cfg.LAVENDER,((width -125) /2,(height - 50)/2),screen)
-    mostrarTexto(my_font,f'Press any key to continue',True,cfg.LAVENDER,((width - 250)/2,(height - 50)/1.7),screen)
+    createText(startFont,f'Game Over !',True,cfg.BLACK,screen,(width/2,(height - 100)/2))
+    # screen.blit(gameOver,((width -gameOver.get_width()) /2,(height - 100)/2))
+    createText(startFont,f'Press any key to continue',True,cfg.BLACK,screen,(width/2,(height - 50)/1.7))
+    # screen.blit(keyToContinue,((width - keyToContinue.get_width())/2,(height - 50)/1.7))
     pygame.mixer.music.stop()
     pygame.display.flip()
     waitUser()
