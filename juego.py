@@ -1,5 +1,6 @@
 import pygame , sys 
 import config as cfg
+import json
 from pygame import draw, time,event,display,font
 from random import randint
 from funciones import *
@@ -20,6 +21,8 @@ scoreCounter = cfg.SCORE
 pos_y=cfg.POS_Y
 pos_x = cfg.POS_X
 livesIncremental = 1
+maxScoreFileData = 0
+attemptsFileData = 0
 
 # interevals from config file
 enemiesFallingInterval = cfg.TIME_INTERVAL
@@ -88,13 +91,17 @@ def limpiar():
 
 
 while True:
-    maxScoreFile = open('./db.txt','r')
-    maxScoreFileData = int(maxScoreFile.read())
-    maxScoreFile.close()
+    with open('./db.json') as db:
+        data = json.load(db)
+        maxScoreFileData = data[0]['value']
+        attemptsFileData = data[1]['value']
 
-    attemptsFile = open('./attempts.txt','r')
-    attemptsFileData = int(attemptsFile.read())
-    attemptsFile.close()
+
+    # with open('./db.txt','r') as maxScoreFile:
+    #     maxScoreFileData = int(maxScoreFile.read())
+
+    # with open('./attempts.txt','r') as attemptsFile:
+    #     attemptsFileData = int(attemptsFile.read())
 
     backgroundStartImage = pygame.transform.scale(backgroundImage,(width,height))
     screen.blit(backgroundStartImage,backgroundRect)
@@ -304,19 +311,14 @@ while True:
     # screen.blit(keyToContinue,((width - keyToContinue.get_width())/2,(height - 50)/1.7))\
     if maxScoreFileData < scoreCounter:
         # Escribo el puntaje max nuevo
-        maxScoreFileEnd = open("./db.txt",'w')
-        maxScoreFileEnd.write(str(scoreCounter))
-        maxScoreFileEnd.close()
-        # Reseteo los intentos
-        attemptsFileEnd = open('attempts.txt','w')
-        attemptsFileEnd.write(str(0))
+        data[0]['value'] = scoreCounter
+        data[1]['value'] = 0
     else:
         # Sumo uno a los intentos
-        attemptsFileData += 1
-        attemptsFileEnd = open('attempts.txt','w')
-        attemptsFileEnd.write(str(attemptsFileData))
-    attemptsFileEnd.close()
+        data[1]['value'] = attemptsFileData + 1
     
+    with open("./db.json",'w') as dataEnd:
+        json.dump(data,dataEnd,indent=2)
     
     pygame.mixer.music.stop()
     pygame.display.flip()
