@@ -15,24 +15,23 @@ height = cfg.HEIGHT
 size = (width,height)
 ancho=cfg.ANCHO
 alto=cfg.ALTO
-contadorVidas = 3
-contadorScore = cfg.SCORE
+liveCounter = 3
+scoreCounter = cfg.SCORE
 pos_y=cfg.POS_Y
 pos_x = cfg.POS_X
-vidasDificultad = 1
+livesIncremental = 1
 
-# intervalo de spawn de bloques
+# interevals from config file
 enemiesFallingInterval = cfg.TIME_INTERVAL
 deathInterval = cfg.DEATH_INTERVAL
 shootInterval = cfg.SHOOT_INTERVAL
 powerUpFallingIterval = cfg.POWER_UP_INTERVAL
 restartPowerInterval = cfg.RESTART_POWERUP
 
-# LLAMO A LOS ASSETS
+# loading assets
 backgroundImage = pygame.image.load('assets/asfalto.png')
 backgroundImage = pygame.transform.rotate(backgroundImage,-90)
 powerUpImage = pygame.image.load('./assets/powerUp.png')
-# powerUpImage = pygame.transform.rotate(powerUpImage,90)
 EnemiesImage0 = pygame.image.load('assets/enemigo0.png')
 EnemiesImage0 = pygame.transform.rotate(EnemiesImage0,90)
 EnemiesImage1 = pygame.image.load('assets/enemigo1.png')
@@ -41,18 +40,21 @@ mainBlockImg = pygame.image.load('assets/autoMain.png')
 mainBlockImg = pygame.transform.rotate(mainBlockImg, -90)
 bulletImg = pygame.image.load('assets/bullet.png')
 dying = pygame.mixer.Sound('assets/dyingsound.mp3')
-golpenave = pygame.mixer.Sound('assets/golpenave.mp3')
-explosionFinal = pygame.mixer.Sound('assets/explosionFinal.mp3')
+hitSpaceShip = pygame.mixer.Sound('assets/golpenave.mp3')
+finalExplosion = pygame.mixer.Sound('assets/explosionFinal.mp3')
 explosion = pygame.mixer.Sound('assets/explosion.mp3')
+powerUpSound = pygame.mixer.Sound('assets/powerUpsound.mp3')
 music = pygame.mixer.music.load('assets/8BitMateo.mp3')
 
 # volumen default
 pygame.mixer.music.set_volume(0.5)
-screen = display.set_mode(size) 
+# set rectangules and screen
+screen = display.set_mode(size)
+display.set_caption('StreetShoot')
 backgroundRect = pygame.Rect(0,0,400,800)
-botonPlay = pygame.Rect(250-(cfg.BUTTON_WIDTH//2),height//1.95,cfg.BUTTON_WIDTH,cfg.BUTTON_HEIGHT)
-botonOptions = pygame.Rect(width/2-(cfg.BUTTON_WIDTH//2),height//1.95,cfg.BUTTON_WIDTH,cfg.BUTTON_HEIGHT)
-botonExit = pygame.Rect((width-250)-(cfg.BUTTON_WIDTH//2),height//1.95,cfg.BUTTON_WIDTH,cfg.BUTTON_HEIGHT)
+buttonPlay = pygame.Rect(250-(cfg.BUTTON_WIDTH//2),height//1.95,cfg.BUTTON_WIDTH,cfg.BUTTON_HEIGHT)
+buttonOptions = pygame.Rect(width/2-(cfg.BUTTON_WIDTH//2),height//1.95,cfg.BUTTON_WIDTH,cfg.BUTTON_HEIGHT)
+buttonExit = pygame.Rect((width-250)-(cfg.BUTTON_WIDTH//2),height//1.95,cfg.BUTTON_WIDTH,cfg.BUTTON_HEIGHT)
 
 # flags:
 move_up = None
@@ -65,9 +67,6 @@ mute = False
 is_running = True
 poweredUp = False
 
-# evento personalizado 
-# evento personalizado 
-deathEvent = pygame.USEREVENT+2
 # evento personalizado
 deathEvent = pygame.USEREVENT+2
 fallingBlock = pygame.USEREVENT+1 
@@ -77,33 +76,37 @@ powerUpFallingEvent = pygame.USEREVENT+4
 restartPowerUp = pygame.USEREVENT+5
 
 # declaro los array de objetos
-bloques= []
-disparos = []
+blockList = []
+shotsList = []
 powerUpList= []
 enemiesImages = [EnemiesImage0,EnemiesImage1]
 
 def limpiar():
-    bloques.clear()
-    disparos.clear()
+    blockList.clear()
+    shotsList.clear()
     mainBlock['rect'].move_ip(pos_x, pos_y)
 
 
 while True:
+    maxScoreFile = open('./db.txt','r')
+    maxScoreFileData = int(maxScoreFile.read())
+    maxScoreFile.close()
+
+    attemptsFile = open('./attempts.txt','r')
+    attemptsFileData = int(attemptsFile.read())
+    attemptsFile.close()
+
     backgroundStartImage = pygame.transform.scale(backgroundImage,(width,height))
     screen.blit(backgroundStartImage,backgroundRect)
-    mainBlock = crearRecImagen(pos_x,pos_y,cfg.MAINANCHO,cfg.MAINALTO,color=cfg.WHITE,image=mainBlockImg)
+    mainBlock = createRectWithImage(pos_x,pos_y,cfg.MAINANCHO,cfg.MAINALTO,color=cfg.WHITE,image=mainBlockImg)
     createText(startFont,f'Press Start to start playing.',True,cfg.BLACK,screen,(width/2,200))
-    # screen.blit(pressAKey,((width-pressAKey.get_width())/2,100))
-    createText(startFont,f'Max Score: {cfg.MAXSCORE}',True,cfg.BLACK,screen,(100,(height-100)))
-    createText(startFont,f'Attempts: {cfg.INTENTOS}',True,cfg.BLACK,screen,(width - 100,(height-100)))
-    # crearBoton(screen,botonPlay,cfg.GREY,'Play!',cfg.BLACK)
-    # crearBoton(screen,botonOptions,cfg.GREY,'Options',cfg.BLACK)
-    # crearBoton(screen,botonExit,cfg.GREY,'Exit',cfg.BLACK)
+    createText(startFont,f'Max Score: {maxScoreFileData}',True,cfg.BLACK,screen,(100,(height-100)))
+    createText(startFont,f'Attempts: {attemptsFileData}',True,cfg.BLACK,screen,(width - 100,(height-100)))
     pygame.display.flip()
-    contadorVidas = 3
-    contadorScore = 0
+    liveCounter = 3
+    scoreCounter = 0
     is_running = True
-    mute = waitUserClick(botonPlay,botonOptions,botonExit,screen)
+    mute = waitUserClick(buttonPlay,buttonOptions,buttonExit,screen)
     # waitUser()
 # volumen default y loop de musica
     pygame.mixer.music.play(-1)
@@ -118,41 +121,40 @@ while True:
                 exit()
             if event.type == pygame.MOUSEBUTTONUP:
                 if event.button == 1:
-                    # Creo un disparo
-                    disparos.append(crearDisparo(mainBlock['rect'].x,mainBlock['rect'].y,bulletImg,offsetBlock=cfg.MAINANCHO//2))
+                    # Creo un shot
+                    shotsList.append(createShot(mainBlock['rect'].x,mainBlock['rect'].y,bulletImg,offsetBlock=cfg.MAINANCHO//2))
             if event.type == deathEvent:
                 dying.play()
                 limpiar()
                 is_running = False
             if event.type == shootEvent:
-                # Creo un disparo
-                disparos.append(crearDisparo(mainBlock['rect'].x,mainBlock['rect'].y,bulletImg,offsetBlock=cfg.MAINANCHO//2))
+                # Creo un shot
+                shotsList.append(createShot(mainBlock['rect'].x,mainBlock['rect'].y,bulletImg,offsetBlock=cfg.MAINANCHO//2))
             if event.type == restartPowerUp:
                 shootInterval = 400
                 mainBlock['speed-y'] = randint(2,3)
                 poweredUp = False
             if event.type == powerUpFallingEvent:
-                # Duplico la velocidad de disparo
-                powerUpList.append(crearRecImagen(left=width+ancho,top=randint(50,450),ancho=60,alto=45,image=powerUpImage,vidas=1))
+                # Duplico la velocidad de shot
+                powerUpList.append(createRectWithImage(left=width+ancho,top=randint(50,450),ancho=60,alto=45,image=powerUpImage,vidas=1))
             if event.type == fallingBlock:
                 i = randint(0,1)
                 if i==0:
-                    bloques.append(crearRecImagen(left=width+ancho,ancho=ancho,alto=alto,top=randint(50,450),image=enemiesImages[i],vidas=1))
+                    blockList.append(createRectWithImage(left=width+ancho,ancho=ancho,alto=alto,top=randint(100,400),image=enemiesImages[i],vidas=1))
                 else:
-                    bloques.append(crearRecImagen(left=width+ancho,ancho=ancho,alto=alto,top=randint(50,450),image=enemiesImages[i],vidas=3))
+                    blockList.append(createRectWithImage(left=width+ancho,ancho=ancho,alto=alto,top=randint(50,450),image=enemiesImages[i],vidas=3))
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     limpiar()
                     is_running = False
-                    cfg.INTENTOS += 1
                 if event.key == pygame.K_SPACE:
-                    disparos.append(crearDisparo(mainBlock['rect'].x,mainBlock['rect'].y,bulletImg,offsetBlock=cfg.MAINANCHO//2))
+                    shotsList.append(createShot(mainBlock['rect'].x,mainBlock['rect'].y,bulletImg,offsetBlock=cfg.MAINANCHO//2))
                 if event.key == pygame.K_UP or event.key == pygame.K_w:
-                    move_down = False
                     move_up = True
+                    move_down = False
                 if event.key == pygame.K_DOWN or event.key == pygame.K_s:
-                    move_up = False
                     move_down = True
+                    move_up = False
                 if event.key == pygame.K_h:
                     hardcoreMode = not hardcoreMode
                 if event.key == pygame.K_m:
@@ -177,30 +179,26 @@ while True:
 
 # ACTUALIZO ELEMENTOS
 
-        # Mute
-        # if pygame.mixer.music.get_volume() == 0 or pygame.mixer.music.get_volume() == False:
-        #     mute == True
-        
+# Blit De Textos, background y main block
+        backgroundImage = pygame.transform.scale(backgroundImage,(width,height))
+        screen.blit(backgroundImage,backgroundRect)
+        screen.blit(mainBlock['image'],mainBlock['rect'])
+        createText(my_font,f'Score: {scoreCounter}',True,cfg.BLACK,screen,(200,50))
+        createText(my_font,f'Lives: {liveCounter}',True,cfg.BLACK,screen,((width-200),50))
+        # si esta en ejecucion el juego hago el blit de los blockList principales
+        if is_running:
+            for shot in shotsList:
+                screen.blit(shot['image'],shot['rect'])
+            for block in blockList:
+                screen.blit(block['image'],block['rect'])
+            for powerUp in powerUpList:
+                screen.blit(powerUp['image'],powerUp['rect'])
+
+                
         if mute == True:
             pygame.mixer.music.set_volume(False)
         else:
             pygame.mixer.music.set_volume(0.5)
-# Blit De Textos, background y main block
-        # Creo los render y el bliteo por sepearado para poder tener la posibilidad
-        # de centrar utilizando el tamano de los textos y hacerlo lo mas reactivo posible
-        backgroundImage = pygame.transform.scale(backgroundImage,(width,height))
-        screen.blit(backgroundImage,backgroundRect)
-        screen.blit(mainBlock['image'],mainBlock['rect'])
-        createText(my_font,f'Score: {contadorScore}',True,cfg.BLACK,screen,(200,50))
-        createText(my_font,f'Lives: {contadorVidas}',True,cfg.BLACK,screen,((width-200),50))
-        # si esta en ejecucion el juego hago el blit de los bloques principales
-        if is_running:
-            for disparo in disparos:
-                screen.blit(disparo['image'],disparo['rect'])
-            for bloque in bloques:
-                screen.blit(bloque['image'],bloque['rect'])
-            for powerUp in powerUpList:
-                screen.blit(powerUp['image'],powerUp['rect'])
         # PREGUNTAR PORQUE EL COMPORTAMIENTO DE CUANDO ESTA EN FALSE LO TOMA COMO TRUE Y VICEVERSA, ACA DEBERIA IR UN TRUE PERO LO CONSIDERA UN FALSE Y NO DISPARA. SE QUEDA DISPARANDO CUANDO SOLTAS ES CLICK SI ESTA EN TRUE.
         # Y PORQUE EL COMPORTAMIENTO DE CUANDO PONGO LA BARRA ESPACIADORA TAMBIEN SOLO FUNCIONA CUANDO AMBAS CONDICIONES ESTAN
         # Lo vamos a ver en clase
@@ -209,87 +207,86 @@ while True:
             
 # MOVER ELEMENTOS
 
-        # MUEVO LOS ALIENS CAYENDO Y LOS DISPAROS
-        for disparo in disparos[:]:
-            rectDisparo=disparo['rect']
-            rectDisparo.move_ip(Speed*2,0)
-            if rectDisparo.right  < 0:
-                disparos = borrarItemLista(disparos,disparo)
+        # MUEVO LOS ALIENS CAYENDO Y LOS shotsList
+        for shot in shotsList[:]:
+            rectshot=shot['rect']
+            rectshot.move_ip(Speed*2,0)
+            if rectshot.right  < 0:
+                shotsList = borrarItemLista(shotsList,shot)
         for powerUp in powerUpList[:]:
             rectPower = powerUp['rect']
             rectPower.move_ip(-powerUp['speed-x']*0.5,0)
             if rectPower.right< 0:
                 if powerUp:
                     powerUpList = borrarItemLista(powerUpList,powerUp)
-            if detectar_colision_circ(rectPower,mainBlock['rect']):
+            if detectCollisionRect(powerUp,mainBlock):
                 if poweredUp == False:
                     shootInterval = 150
                     mainBlock['speed-y'] = 5
                     poweredUp = True
+                    powerUpSound.play()
                     pygame.time.set_timer(restartPowerUp,cfg.RESTART_POWERUP,1)
                 powerUpList = borrarItemLista(powerUpList,powerUp)
-        # Detecto las colisiones con los disparos para penalizar al usuario cuando dispara a un power up
-            for disparo in disparos[:]:
-                if detectar_colision_circ(rectPower,disparo['rect']):
+        # Detecto las colisiones con los shotsList para penalizar al usuario cuando dispara a un power up
+            for shot in shotsList[:]:
+                if detectCollisionRect(powerUp,shot):
                     if powerUp['vidas'] <= 1:
                         powerUpList = borrarItemLista(powerUpList,powerUp)
                     else:
                         powerUp['vidas'] -= 1
-                    disparos = borrarItemLista(disparos,disparo)
-        # Crear un sonido de muerte de powerUp a mano como los otros.
+                    shotsList = borrarItemLista(shotsList,shot)
+        # Crear un sonido de muerte de powerUp a mano como los otros.s
                     explosion.play()
 
-        for bloque in bloques[:]:
-            rect=bloque['rect']
-            rect.move_ip(-bloque['speed-y'],0)
-        # AUMENTO LA DIFICULTAD CON HARDCORE MODE O CON PUNTOS A 30 PARA QUE EMPIEZEN A MOVERSE LOS OBJETOS
-            if contadorScore > 30 or hardcoreMode == True:
+        for block in blockList[:]:
+            rect=block['rect']
+            rect.move_ip(-block['speed-y'],0)
+        # AUMENTO LA DIFICULTAD CON HARDCORE MODE O CON PUNTOS A 30 PARA QUE EMPIEZEN A MOVERSE LOS OBJETOS EN AMBAS DIRECCIONES
+        # TAMBIEN ACELERO AL PERSONAJE PRINCIPAL PARA QUE ESQUIVAR SEA MAS POSIBLE, LA IDEA ES BUSCAR TECNICA Y POSIBILITAR QUE SIGA LO MAS POSIBLE TAMBIEN
+            if scoreCounter > 30 or hardcoreMode == True:
+                mainBlock['speed-y'] = 5
                 if posiciones == True : 
                     if rect.y > 0 :
-                        rect.move_ip(-bloque['speed-x'],-bloque['speed-y'])
+                        rect.move_ip(-block['speed-x'],-block['speed-y'])
+                        
                     else:
                         posiciones = False
                 else:
                     if rect.y < height - rect.height:
-                        rect.move_ip(-bloque['speed-x'],+bloque['speed-y'])
+                        rect.move_ip(-block['speed-x'],+block['speed-y'])
                     else:
                         posiciones = True
 # DETECTO COLISIONES
 
-        # Final de pantalla borro bloque para liberar memoria le sumo 5 para que se vea mas prolijo y aseguro
-        # Tengo que validar que el bloque exista antes de borrarlo porque puede haber sido borrado por alguna colision (la prioridad la tienen los disparos)
+        # Final de pantalla borro block para liberar memoria le sumo 5 para que se vea mas prolijo y aseguro
+        # Tengo que validar que el block exista antes de borrarlo porque puede haber sido borrado por alguna colision (la prioridad la tienen los shotsList)
             if rect.right < 0:
-                bloques = borrarItemLista(bloques,bloque) 
+                blockList = borrarItemLista(blockList,block) 
         # Chequeo la colision con el tiro y los aliens
-            for disparo in disparos[:]:
-                if detectar_colision_circ(rect,disparo['rect']):
-                    if bloque['vidas'] <= 1: 
-                        bloques = borrarItemLista(bloques,bloque) 
-                        contadorScore +=1
+            for shot in shotsList[:]:
+                if detectCollisionRect(block,shot):
+                    if block['vidas'] <= 1: 
+                        blockList = borrarItemLista(blockList,block) 
+                        scoreCounter +=1
                     else:
-                        bloque['vidas'] -= 1
+                        block['vidas'] -= 1
         # Sector dificultad
-                    if contadorScore >= 50:
-                        vidasDificultad = 2
-                    elif contadorScore >= 100:
-                        vidasDificultad = 3
-                    disparos = borrarItemLista(disparos,disparo)
+                    if scoreCounter >= 50:
+                        livesIncremental = 2
+                    elif scoreCounter >= 100:
+                        livesIncremental = 3
+                    shotsList = borrarItemLista(shotsList,shot)
                     explosion.play()
         # Detecto las colisiones con el mainbody
-            if detectar_colision_circ(rect,mainBlock['rect']):
-                if contadorVidas == 1 :
+            if detectCollisionRect(block,mainBlock):
+                if liveCounter == 1 :
                     limpiar()
-                    explosionFinal.play()
-                    if cfg.MAXSCORE < contadorScore:
-                        cfg.MAXSCORE = contadorScore
-                        cfg.INTENTOS = 0
-                    else:
-                        cfg.INTENTOS += 1
+                    finalExplosion.play()
                     pygame.time.set_timer(deathEvent,100,1)
                 else:
-                    contadorVidas -= 1
-                    golpenave.play()
-                    bloques = borrarItemLista(bloques,bloque) 
+                    liveCounter -= 1
+                    hitSpaceShip.play()
+                    blockList = borrarItemLista(blockList,block) 
 # MUEVO EL MAIN BLOCK
         if move_down and mainBlock['rect'].bottom < height:
             mainBlock['rect'].move_ip(0,+mainBlock['speed-y'])
@@ -304,7 +301,23 @@ while True:
     createText(startFont,f'Game Over !',True,cfg.BLACK,screen,(width/2,(height - 100)/2))
     # screen.blit(gameOver,((width -gameOver.get_width()) /2,(height - 100)/2))
     createText(startFont,f'Press any key to continue',True,cfg.BLACK,screen,(width/2,(height - 50)/1.7))
-    # screen.blit(keyToContinue,((width - keyToContinue.get_width())/2,(height - 50)/1.7))
+    # screen.blit(keyToContinue,((width - keyToContinue.get_width())/2,(height - 50)/1.7))\
+    if maxScoreFileData < scoreCounter:
+        # Escribo el puntaje max nuevo
+        maxScoreFileEnd = open("./db.txt",'w')
+        maxScoreFileEnd.write(str(scoreCounter))
+        maxScoreFileEnd.close()
+        # Reseteo los intentos
+        attemptsFileEnd = open('attempts.txt','w')
+        attemptsFileEnd.write(str(0))
+    else:
+        # Sumo uno a los intentos
+        attemptsFileData += 1
+        attemptsFileEnd = open('attempts.txt','w')
+        attemptsFileEnd.write(str(attemptsFileData))
+    attemptsFileEnd.close()
+    
+    
     pygame.mixer.music.stop()
     pygame.display.flip()
     waitUser()
