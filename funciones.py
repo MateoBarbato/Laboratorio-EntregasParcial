@@ -28,12 +28,12 @@ def calculateRadiusRect (rect:pygame.Rect):
 def createRectWithImage(left=0,top=0,ancho=25,alto=25,color=cfg.GREEN, borde = 0, radio= -1,image=None,vidas= 1):
     if image:
         image = pygame.transform.scale(image,(ancho,alto))
+        mask = pygame.mask.from_surface(image)
+        rect = image.get_rect()
+        rect.move_ip(left,top)
     else:
         image = None
-    mask = pygame.mask.from_surface(image)
-    rect = image.get_rect()
-    rect.move_ip(left,top)
-    # rect = pygame.Rect(left,top,ancho,alto)
+    
     return { 'rect':rect , 'color':color, 'borde':borde,'radio':radio,'image':image,'vidas':vidas,'speed-y':randint(2,3),'speed-x':randint(2,3),'mask':mask}
 
 

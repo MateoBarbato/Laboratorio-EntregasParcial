@@ -1,0 +1,6 @@
+FileNotFoundError (Checked)
+
+try error para open file
+ValueError (checked)
+
+IMPORT ERROR ( cheked) 

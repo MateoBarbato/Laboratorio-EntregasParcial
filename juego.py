@@ -1,9 +1,19 @@
-import pygame , sys 
-import config as cfg
-import json
-from pygame import draw, time,event,display,font
-from random import randint
-from funciones import *
+
+try:
+    from funciones import *
+    import pygame , sys 
+    import config as cfg
+    import json
+    from pygame import draw, time,event,display,font
+    from random import randint
+    
+except ImportError:
+    print('')
+    print("Error found while importing modules essentials for the game to function")
+    print('Please validate the install and try again. This files are crutial for the game to run.')
+    print('')
+    pygame.quit()
+    sys.exit()
 
 pygame.init()
 font.init()
@@ -32,22 +42,39 @@ powerUpFallingIterval = cfg.POWER_UP_INTERVAL
 restartPowerInterval = cfg.RESTART_POWERUP
 
 # loading assets
-backgroundImage = pygame.image.load('assets/asfalto.png')
+try:
+    backgroundImage = pygame.image.load('assets/asfalto.png')
+    powerUpImage = pygame.image.load('./assets/powerUp.png')
+    EnemiesImage0 = pygame.image.load('assets/enemigo0.png')
+    EnemiesImage1 = pygame.image.load('assets/enemigo1.png')
+    mainBlockImg = pygame.image.load('assets/autoMain.png')
+    bulletImg = pygame.image.load('assets/bullet.png')
+    music = pygame.mixer.music.load('assets/8BitMateo.mp3')
+except FileNotFoundError:
+    print('')
+    print('Error when attempting to load main assets. Recomended to verify integrity of the files or do a re-install')
+    print('Game experience migth be affected by this error')
+    print('') 
+    # UserResponse = input("Do you want to continue anyways? The game will be unstable. (Y) to continue, any key to close.")
+    # if UserResponse.lower() == 'y':
+    #     pass
+    # else:
+    pygame.quit()
+    sys.exit()
+
+
+# Rotation of the images to fit screen
 backgroundImage = pygame.transform.rotate(backgroundImage,-90)
-powerUpImage = pygame.image.load('./assets/powerUp.png')
-EnemiesImage0 = pygame.image.load('assets/enemigo0.png')
 EnemiesImage0 = pygame.transform.rotate(EnemiesImage0,90)
-EnemiesImage1 = pygame.image.load('assets/enemigo1.png')
 EnemiesImage1 = pygame.transform.rotate(EnemiesImage1,90)
-mainBlockImg = pygame.image.load('assets/autoMain.png')
 mainBlockImg = pygame.transform.rotate(mainBlockImg, -90)
-bulletImg = pygame.image.load('assets/bullet.png')
+# mixer setup of the sounds
 dying = pygame.mixer.Sound('assets/dyingsound.mp3')
 hitSpaceShip = pygame.mixer.Sound('assets/golpenave.mp3')
 finalExplosion = pygame.mixer.Sound('assets/explosionFinal.mp3')
 explosion = pygame.mixer.Sound('assets/explosion.mp3')
 powerUpSound = pygame.mixer.Sound('assets/powerUpsound.mp3')
-music = pygame.mixer.music.load('assets/8BitMateo.mp3')
+
 
 # volumen default
 pygame.mixer.music.set_volume(0.5)
@@ -69,11 +96,11 @@ hardcoreMode = False
 mute = False
 is_running = True
 poweredUp = False
+cheatOn = False
 
 # evento personalizado
 deathEvent = pygame.USEREVENT+2
 fallingBlock = pygame.USEREVENT+1 
-deathEvent = pygame.USEREVENT+2
 shootEvent = pygame.USEREVENT+3
 powerUpFallingEvent = pygame.USEREVENT+4
 restartPowerUp = pygame.USEREVENT+5
@@ -91,17 +118,18 @@ def limpiar():
 
 
 while True:
-    with open('./db.json') as db:
-        data = json.load(db)
-        maxScoreFileData = data[0]['value']
-        attemptsFileData = data[1]['value']
-
-
-    # with open('./db.txt','r') as maxScoreFile:
-    #     maxScoreFileData = int(maxScoreFile.read())
-
-    # with open('./attempts.txt','r') as attemptsFile:
-    #     attemptsFileData = int(attemptsFile.read())
+    try:
+        with open('./db.json') as db:
+            data = json.load(db)
+            maxScoreFileData = data[0]['value']
+            attemptsFileData = data[1]['value']
+    except OSError.filename:
+        print('')
+        print("Error while trying to read data for the scores")
+        print('Please validate the install and try again. The game can run without this but there will be no data saved after the excecution.')
+        print('')
+        maxScoreFileData = 0
+        attemptsFileData = 0
 
     backgroundStartImage = pygame.transform.scale(backgroundImage,(width,height))
     screen.blit(backgroundStartImage,backgroundRect)
@@ -166,6 +194,8 @@ while True:
                     hardcoreMode = not hardcoreMode
                 if event.key == pygame.K_m:
                     mute = not mute
+                if event.key == pygame.K_SEMICOLON:
+                    cheatOn = not cheatOn
                 if event.key == pygame.K_k:
                     if musicIndex:
                         music =  pygame.mixer.music.load('./assets/8Bit.mp3')
@@ -211,6 +241,11 @@ while True:
         # Lo vamos a ver en clase
         if  mousepressed[0] == False : 
             pygame.time.set_timer(shootEvent, shootInterval)
+
+        if cheatOn == True:
+            shootInterval = 90
+            mainBlock['speed-y'] = 10
+            poweredUp = True
             
 # MOVER ELEMENTOS
 
@@ -317,9 +352,14 @@ while True:
         # Sumo uno a los intentos
         data[1]['value'] = attemptsFileData + 1
     
-    with open("./db.json",'w') as dataEnd:
-        json.dump(data,dataEnd,indent=2)
-    
+    try:
+        with open("./db.json",'w') as dataEnd:
+            json.dump(data,dataEnd,indent=2)
+    except OSError.filename:
+        print('')
+        print("Error while writing the scores to the datafile. The score wont be saved")
+        print('Please validate the files and check again. If the problem persist re-install the files')
+        print('')
     pygame.mixer.music.stop()
     pygame.display.flip()
     waitUser()
