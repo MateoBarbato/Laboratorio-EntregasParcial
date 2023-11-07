@@ -1,19 +1,18 @@
 
 try:
-    from funciones import *
-    import pygame , sys 
+    from creating import *
+    from handlersUser import *
+    from colisiones import *
     import config as cfg
     import json
     from pygame import draw, time,event,display,font
     from random import randint
-    
 except ImportError:
     print('')
     print("Error found while importing modules essentials for the game to function")
     print('Please validate the install and try again. This files are crutial for the game to run.')
     print('')
-    pygame.quit()
-    sys.exit()
+    exit()
 
 pygame.init()
 font.init()
@@ -44,23 +43,19 @@ restartPowerInterval = cfg.RESTART_POWERUP
 # loading assets
 try:
     backgroundImage = pygame.image.load('assets/asfalto.png')
-    powerUpImage = pygame.image.load('./assets/powerUp.png')
+    powerUpImage = pygame.image.load('assets/powerUp.png')
     EnemiesImage0 = pygame.image.load('assets/enemigo0.png')
     EnemiesImage1 = pygame.image.load('assets/enemigo1.png')
     mainBlockImg = pygame.image.load('assets/autoMain.png')
     bulletImg = pygame.image.load('assets/bullet.png')
     music = pygame.mixer.music.load('assets/8BitMateo.mp3')
+
 except FileNotFoundError:
     print('')
     print('Error when attempting to load main assets. Recomended to verify integrity of the files or do a re-install')
-    print('Game experience migth be affected by this error')
+    print('Game cannot run, closing...')
     print('') 
-    # UserResponse = input("Do you want to continue anyways? The game will be unstable. (Y) to continue, any key to close.")
-    # if UserResponse.lower() == 'y':
-    #     pass
-    # else:
-    pygame.quit()
-    sys.exit()
+    exit()
 
 
 # Rotation of the images to fit screen
@@ -122,15 +117,18 @@ while True:
     try:
         with open('./db.json') as db:
             data = json.load(db)
-            maxScoreFileData = data[0]['value']
-            attemptsFileData = data[1]['value']
-    except OSError.filename:
+        maxScoreFileData = data[0]['value']
+        attemptsFileData = data[1]['value']
+    except FileNotFoundError:
+        data = createDefaultDb()
+        with open('./db.json','w') as file:
+            json.dump(data,file,indent=2)
         print('')
         print("Error while trying to read data for the scores")
-        print('Please validate the install and try again. The game can run without this but there will be no data saved after the excecution.')
+        print('Please validate the install and try again. The game can run without it but the db has been reseted to default (0)')
         print('')
-        maxScoreFileData = 0
-        attemptsFileData = 0
+        maxScoreFileData = data[0]['value']
+        attemptsFileData = data[1]['value']
 
     backgroundStartImage = pygame.transform.scale(backgroundImage,(width,height))
     screen.blit(backgroundStartImage,backgroundRect)
