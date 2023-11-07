@@ -97,6 +97,7 @@ mute = False
 is_running = True
 poweredUp = False
 cheatOn = False
+menuState = 'main'
 
 # evento personalizado
 deathEvent = pygame.USEREVENT+2
@@ -141,7 +142,7 @@ while True:
     liveCounter = 3
     scoreCounter = 0
     is_running = True
-    mute = waitUserClick(buttonPlay,buttonOptions,buttonExit,screen)
+    mute = waitUserClick(buttonPlay,buttonOptions,buttonExit,screen,menuState)
     # waitUser()
 # volumen default y loop de musica
     pygame.mixer.music.play(-1)

@@ -56,35 +56,56 @@ def waitUser ():
                     sys.exit()
                 return
 
-def waitUserClick (rect_1:pygame.Rect,rect_2:pygame.Rect,rect_3:pygame.Rect,screen):
+def waitUserClick (rect_1:pygame.Rect,rect_2:pygame.Rect,rect_3:pygame.Rect,screen,menuState):
     colorMuted = True
     # agregar la funcion crear_boton que crea un rect con texto y background que cuando el mouse esta encima cambia el color del fondo
-    while True:
+    while menuState == 'main':
         createButton(screen,rect_1,cfg.GREY,'Play!',cfg.BLACK)
         createButton(screen,rect_3,cfg.GREY,'Exit',cfg.BLACK)
-        if colorMuted:
-            createButton(screen,rect_2,cfg.GREEN,'Music On',cfg.BLACK)
-            pygame.mixer.music.set_volume(0.5)
-        else:
-            createButton(screen,rect_2,cfg.RED,'Music Off',cfg.BLACK)
-            pygame.mixer.music.set_volume(False)
+        createButton(screen,rect_2,cfg.GREY,'Options',cfg.BLACK)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                exit()
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
                     exit()
+            if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        exit()
             if event.type == pygame.MOUSEBUTTONDOWN:
                 cursor = event.pos
                 if event.button == 1:
                     if rect_1.collidepoint(cursor[0],cursor[1]):
                         return not colorMuted
                     if rect_2.collidepoint(cursor[0],cursor[1]):
-                        colorMuted =  not colorMuted
+                        menuState = 'options'
                     if rect_3.collidepoint(cursor[0],cursor[1]):
                         exit()
         pygame.display.flip()
-                    
+    
+        while menuState == 'options':
+            createButton(screen,rect_3,cfg.GREY,'Go Back',cfg.BLACK)
+            if colorMuted:
+                createButton(screen,rect_2,cfg.GREEN,'Music On',cfg.BLACK)
+                pygame.mixer.music.set_volume(0.5)
+            else:
+                createButton(screen,rect_2,cfg.RED,'Music Off',cfg.BLACK)
+                pygame.mixer.music.set_volume(False)
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    exit()
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        exit()
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    cursor = event.pos
+                    if event.button == 1:
+                        if rect_1.collidepoint(cursor[0],cursor[1]):
+                            return not colorMuted
+                        if rect_2.collidepoint(cursor[0],cursor[1]):
+                            colorMuted =  not colorMuted
+                        if rect_3.collidepoint(cursor[0],cursor[1]):
+                            menuState = 'main'
+            pygame.display.flip()
+
+
 def createText(fuente,texto,AA,color,source,coordenadas):
     text_rec = fuente.render(texto,AA,color)
     text_rectCentered = text_rec.get_rect(center=(coordenadas[0],coordenadas[1]))
