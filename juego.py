@@ -7,11 +7,10 @@ try:
     import json
     from pygame import draw, time,event,display,font
     from random import randint
-except ImportError:
-    print('')
-    print("Error found while importing modules essentials for the game to function")
-    print('Please validate the install and try again. This files are crutial for the game to run.')
-    print('')
+except ImportError as Err:
+    errMsg("Error found while importing modules essentials for the game to function")
+    print(Err)
+    errMsg('Please validate the install and try again. This files are crutial for the game to run.')
     exit()
 
 pygame.init()
@@ -51,10 +50,8 @@ try:
     music = pygame.mixer.music.load('assets/8BitMateo.mp3')
 
 except FileNotFoundError:
-    print('')
-    print('Error when attempting to load main assets. Recomended to verify integrity of the files or do a re-install')
-    print('Game cannot run, closing...')
-    print('') 
+    errMsg('Error when attempting to load main assets. Recomended to verify integrity of the files or do a re-install')
+    errMsg('Game cannot run, closing...')
     exit()
 
 
@@ -72,9 +69,15 @@ powerUpSound = pygame.mixer.Sound('assets/powerUpsound.mp3')
 
 
 # volumen default
+
 pygame.mixer.music.set_volume(0.5)
 # set rectangules and screen
-screen = display.set_mode(size)
+try:
+    screen = display.set_mode(size)
+    
+except pygame.error as Err:
+    errMsg(Err)
+    exit()
 display.set_caption('StreetShoot')
 backgroundRect = pygame.Rect(0,0,400,800)
 buttonPlay = pygame.Rect(250-(cfg.BUTTON_WIDTH//2),height//1.95,cfg.BUTTON_WIDTH,cfg.BUTTON_HEIGHT)
@@ -119,14 +122,13 @@ while True:
             data = json.load(db)
         maxScoreFileData = data[0]['value']
         attemptsFileData = data[1]['value']
-    except FileNotFoundError:
+    except FileNotFoundError as Err:
         data = createDefaultDb()
         with open('./db.json','w') as file:
             json.dump(data,file,indent=2)
-        print('')
-        print("Error while trying to read data for the scores")
-        print('Please validate the install and try again. The game can run without it but the db has been reseted to default (0)')
-        print('')
+        errMsg("Error while trying to read data for the scores")
+        print(Err)
+        errMsg('Please validate the install and try again. The game can run without it but the db has been reseted to default (0)')
         maxScoreFileData = data[0]['value']
         attemptsFileData = data[1]['value']
 
@@ -354,11 +356,10 @@ while True:
     try:
         with open("./db.json",'w') as dataEnd:
             json.dump(data,dataEnd,indent=2)
-    except OSError.filename:
-        print('')
-        print("Error while writing the scores to the datafile. The score wont be saved")
-        print('Please validate the files and check again. If the problem persist re-install the files')
-        print('')
+    except OSError.filename as Err:
+        errMsg("Error while writing the scores to the datafile. The score wont be saved")
+        print(Err)
+        errMsg('Please validate the files and check again. If the problem persist re-install the files')
     pygame.mixer.music.stop()
     pygame.display.flip()
     waitUser()

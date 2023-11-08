@@ -73,5 +73,9 @@ def exit():
     pygame.quit()
     sys.exit()
 
+def errMsg(msg):
+    print("")
+    print(msg)
+    print("")
 
 # def options(screen,rect_1,rect_2,rect_3):
